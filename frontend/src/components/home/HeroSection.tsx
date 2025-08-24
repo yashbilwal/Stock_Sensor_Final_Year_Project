@@ -1,24 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, TrendingUp, BarChart3, PieChart, ArrowRight, Star, Sparkles, Zap, Target } from 'lucide-react';
+import { Search, TrendingUp, BarChart3, PieChart, ArrowRight, Star, Sparkles, Zap, Target, Loader2 } from 'lucide-react';
+import { stockService } from '../../services/stockService';
 
 const HeroSection: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [allStocks, setAllStocks] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [searchError, setSearchError] = useState<string>('');
   const navigate = useNavigate();
 
-  const mockStocks = ['TCS', 'INFY', 'RELIANCE', 'HDFC', 'ICICI', 'SBI', 'WIPRO', 'BHARTIARTL', 'MARUTI', 'HDFCBANK'];
+  // Load symbols.json on mount
+  useEffect(() => {
+    fetch('/symbols.json')
+      .then((res) => res.json())
+      .then((data: string[]) => setAllStocks(data))
+      .catch((err) => console.error('Error loading symbols.json:', err));
+  }, []);
 
+  // Debounced Search
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    if (query.length > 0) {
-      const filtered = mockStocks.filter(stock => 
-        stock.toLowerCase().includes(query.toLowerCase())
-      );
-      setSuggestions(filtered.slice(0, 5));
-    } else {
-      setSuggestions([]);
+    setSearchError('');
+
+    // Clear previous debounce
+    if ((window as any).searchTimer) {
+      clearTimeout((window as any).searchTimer);
     }
+
+    if (query.trim().length === 0) {
+      setSuggestions([]); // clear immediately when empty
+      return;
+    }
+
+    // Debounce filtering
+    (window as any).searchTimer = setTimeout(() => {
+      const filtered = allStocks
+        .filter((stock) =>
+          stock.toLowerCase().startsWith(query.toLowerCase())
+        )
+        .sort((a, b) => a.length - b.length)
+        .slice(0, 5);
+      setSuggestions(filtered);
+    }, 200);
   };
 
   const handleStockSelect = (stock: string) => {
@@ -27,9 +52,30 @@ const HeroSection: React.FC = () => {
     navigate(`/stock/${stock}`);
   };
 
-  const handleAnalyze = () => {
-    if (searchQuery.trim()) {
-      navigate(`/stock/${searchQuery.trim().toUpperCase()}`);
+  const handleAnalyze = async () => {
+    if (!searchQuery.trim()) {
+      setSearchError('Please enter a stock symbol');
+      return;
+    }
+
+    const symbol = searchQuery.trim().toUpperCase();
+    setIsAnalyzing(true);
+    setSearchError('');
+
+    try {
+      // Navigate to stock report page - the page will fetch the analysis
+      navigate(`/stock/${symbol}`);
+    } catch (error) {
+      console.error('Error navigating to stock report:', error);
+      setSearchError('Failed to analyze stock. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAnalyze();
     }
   };
 
@@ -83,16 +129,16 @@ const HeroSection: React.FC = () => {
                 <Target className="h-6 w-6 text-cosmic-pink" />
               </div>
             </div>
-            
+
             <h1 className="text-6xl md:text-8xl font-black leading-tight">
               <span className="block text-white drop-shadow-2xl">Smart Stock</span>
               <span className="block bg-gradient-to-r from-cosmic-purple via-cosmic-cyan to-cosmic-pink bg-clip-text text-transparent animate-glow drop-shadow-2xl">
                 Intelligence
               </span>
             </h1>
-            
+
             <p className="text-2xl md:text-3xl text-galaxy-200 max-w-5xl mx-auto leading-relaxed font-light">
-              Discover stocks with <span className="text-cosmic-cyan font-bold text-3xl">5–10% returns</span> in 
+              Discover stocks with <span className="text-cosmic-cyan font-bold text-3xl">5–10% returns</span> in
               <span className="text-cosmic-purple font-bold text-3xl"> 5–10 days</span> using cutting-edge AI and market intelligence.
             </p>
           </div>
@@ -112,35 +158,62 @@ const HeroSection: React.FC = () => {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => handleSearch(e.target.value)}
+                      onKeyPress={handleKeyPress}
                       placeholder="Enter stock symbol (e.g., TCS, INFY, RELIANCE)"
                       className="flex-1 px-6 py-6 text-xl bg-transparent text-white placeholder-galaxy-400 focus:outline-none"
                     />
                     <button
                       onClick={handleAnalyze}
-                      className="flex-shrink-0 mr-2 px-8 py-4 bg-gradient-to-r from-cosmic-purple to-cosmic-pink text-white font-bold rounded-xl hover:from-cosmic-pink hover:to-cosmic-purple transition-all transform hover:scale-105 flex items-center space-x-2"
+                      disabled={isAnalyzing}
+                      className="flex-shrink-0 mr-2 px-8 py-4 bg-gradient-to-r from-cosmic-purple to-cosmic-pink text-white font-bold rounded-xl hover:from-cosmic-pink hover:to-cosmic-purple transition-all transform hover:scale-105 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <span className="text-lg">Analyze</span>
-                      <ArrowRight className="h-5 w-5" />
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span className="text-lg">Analyzing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-lg">Analyze</span>
+                          <ArrowRight className="h-5 w-5" />
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
               </div>
 
+              {/* Error Message */}
+              {searchError && (
+                <div className="absolute top-full left-0 right-0 mt-2 text-error-400 text-sm text-center">
+                  {searchError}
+                </div>
+              )}
+
               {/* Auto-suggestions */}
               {suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-4 bg-galaxy-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-galaxy-600/50 z-20 animate-slide-up overflow-hidden">
-                  {suggestions.map((stock, index) => (
+                  {suggestions.map((stock) => (
                     <button
                       key={stock}
                       onClick={() => handleStockSelect(stock)}
                       className="w-full px-8 py-5 text-left text-white hover:bg-galaxy-700/50 transition-colors flex items-center justify-between group border-b border-galaxy-700/30 last:border-b-0"
                     >
-                      <span className="font-semibold text-lg">{stock}</span>
+                      <span className="font-semibold text-lg">
+                        {/* Highlight typed part */}
+                        <span className="text-cosmic-cyan">
+                          {stock.slice(0, searchQuery.length)}
+                        </span>
+                        <span className="text-white">
+                          {stock.slice(searchQuery.length)}
+                        </span>
+                      </span>
                       <ArrowRight className="h-5 w-5 text-cosmic-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
                   ))}
                 </div>
               )}
+
             </div>
           </div>
 

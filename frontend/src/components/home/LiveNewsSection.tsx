@@ -1,82 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, TrendingUp, TrendingDown, Minus, ExternalLink, Sparkles, Star } from 'lucide-react';
-
-interface NewsItem {
-  id: string;
-  headline: string;
-  timestamp: string;
-  sentiment: 'Positive' | 'Negative' | 'Neutral';
-  source: string;
-  summary: string;
-  url: string;
-}
+import React, { useState } from 'react';
+import { Clock, TrendingUp, TrendingDown, Minus, ExternalLink, Sparkles, Star, RefreshCw, AlertCircle } from 'lucide-react';
+import { useNews } from '../../hooks/useNews';
+import { NewsItem } from '../../services/newsService';
 
 const LiveNewsSection: React.FC = () => {
   const [selectedSentiment, setSelectedSentiment] = useState<'All' | 'Positive' | 'Negative' | 'Neutral'>('All');
-  const [refreshTime, setRefreshTime] = useState<string>('');
+  
+  // Use the custom hook to fetch real news data
+  const { news, loading, error, lastUpdated, refreshNews } = useNews();
 
-  const mockNews: NewsItem[] = [
-    {
-      id: '1',
-      headline: 'TCS Reports Strong Q3 Results, Revenue Up 8.5% YoY',
-      timestamp: '2 hours ago',
-      sentiment: 'Positive',
-      source: 'MoneyControl',
-      summary: 'Tata Consultancy Services announced robust quarterly results with significant revenue growth and improved margins.',
-      url: '#'
-    },
-    {
-      id: '2',
-      headline: 'RBI Maintains Repo Rate at 6.5%, Inflation Concerns Persist',
-      timestamp: '3 hours ago',
-      sentiment: 'Neutral',
-      source: 'Economic Times',
-      summary: 'Reserve Bank of India keeps interest rates unchanged while monitoring inflation trends.',
-      url: '#'
-    },
-    {
-      id: '3',
-      headline: 'Reliance Industries Faces Regulatory Scrutiny Over Telecom Merger',
-      timestamp: '4 hours ago',
-      sentiment: 'Negative',
-      source: 'Business Standard',
-      summary: 'Regulatory authorities raising questions about the proposed telecom sector consolidation.',
-      url: '#'
-    },
-    {
-      id: '4',
-      headline: 'HDFC Bank Launches New Digital Banking Platform for SMEs',
-      timestamp: '5 hours ago',
-      sentiment: 'Positive',
-      source: 'LiveMint',
-      summary: 'Major private bank introduces comprehensive digital solutions targeting small and medium enterprises.',
-      url: '#'
-    },
-    {
-      id: '5',
-      headline: 'IT Sector Outlook Remains Cautious Amid Global Slowdown',
-      timestamp: '6 hours ago',
-      sentiment: 'Negative',
-      source: 'CNBC TV18',
-      summary: 'Industry experts express concerns about demand weakness in key international markets.',
-      url: '#'
-    }
-  ];
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setRefreshTime(`Last updated: ${now.toLocaleTimeString()}`);
-    };
-    
-    updateTime();
-    const interval = setInterval(updateTime, 30000); // Update every 30 seconds
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const filteredNews = mockNews.filter(news => 
-    selectedSentiment === 'All' || news.sentiment === selectedSentiment
+  // Filter news based on selected sentiment
+  const filteredNews = news.filter(newsItem => 
+    selectedSentiment === 'All' || newsItem.sentiment === selectedSentiment
   );
 
   const getSentimentIcon = (sentiment: string) => {
@@ -100,6 +35,89 @@ const LiveNewsSection: React.FC = () => {
         return 'bg-galaxy-700/50 text-galaxy-300 border-galaxy-600/30';
     }
   };
+
+  const formatLastUpdated = (date: Date) => {
+    return `Last updated: ${date.toLocaleTimeString()}`;
+  };
+
+  // Loading state
+  if (loading && news.length === 0) {
+    return (
+      <section className="relative py-20 bg-galaxy-900 overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+          <div className="text-center space-y-6 mb-12">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <Sparkles className="h-6 w-6 text-cosmic-purple animate-pulse" />
+              <span className="text-cosmic-cyan font-semibold tracking-wide">LIVE UPDATES</span>
+              <Sparkles className="h-6 w-6 text-cosmic-pink animate-pulse" />
+            </div>
+            
+            <h2 className="text-4xl md:text-5xl font-bold text-white">
+              Hot News &
+              <span className="block bg-gradient-to-r from-cosmic-purple via-cosmic-cyan to-cosmic-pink bg-clip-text text-transparent">
+                Sentiment
+              </span>
+            </h2>
+            
+            <p className="text-xl text-galaxy-300 max-w-3xl mx-auto leading-relaxed">
+              Stay updated with real-time market news and AI-powered sentiment analysis.
+            </p>
+          </div>
+
+          <div className="flex justify-center items-center py-20">
+            <div className="flex items-center space-x-3 text-cosmic-cyan">
+              <RefreshCw className="h-6 w-6 animate-spin" />
+              <span className="text-lg">Loading latest news...</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Error state
+  if (error && news.length === 0) {
+    return (
+      <section className="relative py-20 bg-galaxy-900 overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+          <div className="text-center space-y-6 mb-12">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <Sparkles className="h-6 w-6 text-cosmic-purple animate-pulse" />
+              <span className="text-cosmic-cyan font-semibold tracking-wide">LIVE UPDATES</span>
+              <Sparkles className="h-6 w-6 text-cosmic-pink animate-pulse" />
+            </div>
+            
+            <h2 className="text-4xl md:text-5xl font-bold text-white">
+              Hot News &
+              <span className="block bg-gradient-to-r from-cosmic-purple via-cosmic-cyan to-cosmic-pink bg-clip-text text-transparent">
+                Sentiment
+              </span>
+            </h2>
+            
+            <p className="text-xl text-galaxy-300 max-w-3xl mx-auto leading-relaxed">
+              Stay updated with real-time market news and AI-powered sentiment analysis.
+            </p>
+          </div>
+
+          <div className="flex justify-center items-center py-20">
+            <div className="flex flex-col items-center space-y-4 text-error-400">
+              <AlertCircle className="h-12 w-12" />
+              <div className="text-center">
+                <p className="text-lg font-medium">Failed to load news</p>
+                <p className="text-sm text-galaxy-400">{error}</p>
+                <button 
+                  onClick={refreshNews}
+                  className="mt-4 px-6 py-2 bg-cosmic-purple hover:bg-cosmic-pink text-white rounded-lg transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="relative py-20 bg-galaxy-900 overflow-hidden">
@@ -161,66 +179,88 @@ const LiveNewsSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Last Updated */}
-          <div className="flex items-center space-x-2 text-sm text-galaxy-400">
-            <Clock className="h-4 w-4" />
-            <span>{refreshTime}</span>
+          {/* Last Updated and Refresh */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-sm text-galaxy-400">
+              <Clock className="h-4 w-4" />
+              <span>{formatLastUpdated(lastUpdated)}</span>
+            </div>
+            <button
+              onClick={refreshNews}
+              disabled={loading}
+              className="flex items-center space-x-2 px-3 py-2 text-sm text-cosmic-cyan hover:text-cosmic-purple transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
           </div>
         </div>
 
         {/* News Items */}
         <div className="space-y-6">
-          {filteredNews.map((news, index) => (
-            <div
-              key={news.id}
-              className="group relative"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              {/* Glow Effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-cosmic-purple/10 via-cosmic-cyan/10 to-cosmic-pink/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-1000"></div>
-              
-              {/* Card */}
-              <div className="relative bg-galaxy-800/50 backdrop-blur-sm border border-galaxy-700/50 rounded-2xl p-6 hover:bg-galaxy-700/50 transition-all duration-300 animate-slide-up">
-                <div className="space-y-4">
-                  {/* Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                    <div className="flex items-center space-x-3">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getSentimentColor(news.sentiment)}`}>
-                        {getSentimentIcon(news.sentiment)}
-                        <span className="ml-1">{news.sentiment}</span>
-                      </span>
-                      <span className="text-sm font-medium text-cosmic-cyan">{news.source}</span>
+          {filteredNews.length > 0 ? (
+            filteredNews.map((newsItem, index) => (
+              <div
+                key={newsItem.id}
+                className="group relative"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                {/* Glow Effect */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-cosmic-purple/10 via-cosmic-cyan/10 to-cosmic-pink/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-1000"></div>
+                
+                {/* Card */}
+                <div className="relative bg-galaxy-800/50 backdrop-blur-sm border border-galaxy-700/50 rounded-2xl p-6 hover:bg-galaxy-700/50 transition-all duration-300 animate-slide-up">
+                  <div className="space-y-4">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getSentimentColor(newsItem.sentiment)}`}>
+                          {getSentimentIcon(newsItem.sentiment)}
+                          <span className="ml-1">{newsItem.sentiment}</span>
+                        </span>
+                        <span className="text-sm font-medium text-cosmic-cyan">{newsItem.source}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-sm text-galaxy-400">
+                        <Clock className="h-4 w-4" />
+                        <span>{newsItem.timestamp}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2 text-sm text-galaxy-400">
-                      <Clock className="h-4 w-4" />
-                      <span>{news.timestamp}</span>
+
+                    {/* Content */}
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-white leading-tight group-hover:text-cosmic-cyan transition-colors">
+                        {newsItem.headline}
+                      </h3>
+                      <p className="text-galaxy-300 leading-relaxed group-hover:text-galaxy-200 transition-colors">
+                        {newsItem.summary}
+                      </p>
                     </div>
-                  </div>
 
-                  {/* Content */}
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-white leading-tight group-hover:text-cosmic-cyan transition-colors">
-                      {news.headline}
-                    </h3>
-                    <p className="text-galaxy-300 leading-relaxed group-hover:text-galaxy-200 transition-colors">
-                      {news.summary}
-                    </p>
-                  </div>
-
-                  {/* Action */}
-                  <div className="flex justify-end">
-                    <a
-                      href={news.url}
-                      className="inline-flex items-center space-x-2 text-sm text-cosmic-cyan hover:text-cosmic-purple transition-colors group/link"
-                    >
-                      <span>Read more</span>
-                      <ExternalLink className="h-3 w-3 group-hover/link:translate-x-1 transition-transform" />
-                    </a>
+                    {/* Action */}
+                    <div className="flex justify-end">
+                      <a
+                        href={newsItem.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-2 text-sm text-cosmic-cyan hover:text-cosmic-purple transition-colors group/link"
+                      >
+                        <span>Read more</span>
+                        <ExternalLink className="h-3 w-3 group-hover/link:translate-x-1 transition-transform" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-20">
+              <div className="flex flex-col items-center space-y-4 text-galaxy-400">
+                <AlertCircle className="h-12 w-12" />
+                <p className="text-lg">No news available</p>
+                <p className="text-sm">Try changing the sentiment filter or refresh the page</p>
+              </div>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Auto-refresh Notice */}
