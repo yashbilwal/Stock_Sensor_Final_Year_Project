@@ -85,12 +85,14 @@ class StockService {
       // Ensure symbol has .NS suffix for NSE stocks
       const nseSymbol = symbol.endsWith('.NS') ? symbol : `${symbol}.NS`;
       
-      const response = await fetch(`${this.baseURL}/stocks/analyze/${nseSymbol}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `${this.baseURL}/stocks/analyze/${encodeURIComponent(nseSymbol)}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

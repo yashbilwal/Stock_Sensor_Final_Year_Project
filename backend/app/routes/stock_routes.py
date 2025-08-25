@@ -45,7 +45,7 @@ def analyze_stock():
             'error': f'Internal server error occurred: {str(e)}'
         }), 500
 
-@stock_bp.route('/analyze/<symbol>', methods=['GET', 'OPTIONS'])
+@stock_bp.route('/analyze/<path:symbol>', methods=['GET', 'OPTIONS'])
 @cross_origin()
 def get_stock_analysis(symbol):
     """Get stock analysis by symbol"""
@@ -53,23 +53,28 @@ def get_stock_analysis(symbol):
         # Handle OPTIONS request for CORS preflight
         if request.method == 'OPTIONS':
             return jsonify({'status': 'ok'}), 200
-            
+
+        # Normalize symbol
         symbol = symbol.strip().upper()
         if not symbol:
             return jsonify({
                 'success': False,
                 'error': 'Stock symbol cannot be empty'
             }), 400
-        
+
+        # If user sends TCS, make it TCS.NS by default
+        if not symbol.endswith(".NS") and not symbol.endswith(".BO"):
+            symbol = f"{symbol}.NS"
+
         # Check for cached analysis
         cached_response = StockAnalysisService.get_cached_analysis(symbol)
         if cached_response:
             return jsonify(cached_response.to_dict()), 200
-        
+
         # Generate new analysis
         response = StockAnalysisService.generate_stock_report(symbol)
         return jsonify(response.to_dict()), 200 if response.success else 500
-        
+
     except Exception as e:
         logging.error(f"Error in stock analysis: {str(e)}")
         return jsonify({
