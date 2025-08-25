@@ -134,6 +134,7 @@ class ChartinkScraper:
 
         # Use system chromedriver if provided, else default service
         chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
+        self.driver = None
         try:
             if chromedriver_path and os.path.exists(chromedriver_path):
                 service = Service(chromedriver_path)
@@ -142,8 +143,8 @@ class ChartinkScraper:
                 # Fallback: hope chromedriver is on PATH
                 self.driver = webdriver.Chrome(options=chrome_options)
         except Exception as e:
-            logger.error(f"Failed to start ChromeDriver/Chrome: {e}")
-            raise
+            logger.warning(f"Selenium not available; falling back to requests-based scraping. Reason: {e}")
+            self.driver = None
         self.wait = WebDriverWait(self.driver, 30)
 
     def get_column_indices(self, soup):
@@ -178,6 +179,50 @@ class ChartinkScraper:
         logger.info(f"Starting {source_name} data scraping...")
         scraped_data = []
         try:
+            if self.driver is None:
+                # Fallback: requests-based fetch of first page only
+                resp = requests.get(url, timeout=20, headers={
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+                })
+                resp.raise_for_status()
+                soup = BeautifulSoup(resp.text, "html.parser")
+                column_indices = self.get_column_indices(soup)
+                if not column_indices:
+                    logger.error("Could not determine column indices (fallback)")
+                    return scraped_data
+                table = soup.find("table", {"id": "DataTables_Table_0"})
+                if not table:
+                    logger.error("Data table not found (fallback)")
+                    return scraped_data
+                rows = table.find("tbody").find_all("tr")
+                for row in rows:
+                    columns = row.find_all("td")
+                    if len(columns) >= max(column_indices.values()) + 1:
+                        try:
+                            stock_name = columns[column_indices["stock_name"]].get_text(strip=True)
+                            symbol = columns[column_indices["symbol"]].get_text(strip=True)
+                            percent_text = columns[column_indices["percent_change"]].get_text(strip=True)
+                            percent_change = float(re.sub(r"[^\d.-]", "", percent_text.replace("%", "")))
+                            price_text = columns[column_indices["price"]].get_text(strip=True)
+                            price = float(re.sub(r"[^\d.]", "", price_text.replace(",", "")))
+                            if percent_change < 0:
+                                break
+                            if percent_change > 0:
+                                data = {
+                                    "stock_name": stock_name,
+                                    "symbol": symbol,
+                                    "percent_change": percent_change,
+                                    "price": price,
+                                    "scraped_at": time.time(),
+                                    "source": source_name,
+                                }
+                                scraped_data.append(data)
+                        except Exception as e:
+                            logger.warning(f"Error parsing row (fallback): {e}")
+                            continue
+                return scraped_data
+
+            # Selenium path
             self.driver.get(url)
 
             # Wait for and click Run Scan button
@@ -308,7 +353,8 @@ class ChartinkScraper:
     def cleanup(self):
         """Clean up resources"""
         try:
-            self.driver.quit()
+            if self.driver is not None:
+                self.driver.quit()
             self.client.close()
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
