@@ -1,6 +1,5 @@
 # run.py
 from app import create_app
-from app.tasks.scheduler import init_scheduler
 import logging
 import os
 
@@ -10,12 +9,15 @@ logger = logging.getLogger(__name__)
 
 app = create_app()
 
-# Initialize scheduler with the app instance
+# Initialize scheduler with the app instance (optional)
 try:
+    from app.tasks.scheduler import init_scheduler
     init_scheduler(app)
     logger.info("Backend initialized successfully with scheduler")
+except ImportError as e:
+    logger.warning(f"Scheduler not available: {str(e)}. Running without scheduled tasks.")
 except Exception as e:
-    logger.error(f"Error initializing scheduler: {str(e)}")
+    logger.error(f"Error initializing scheduler: {str(e)}. Running without scheduled tasks.")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
