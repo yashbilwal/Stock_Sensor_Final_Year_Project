@@ -21,7 +21,7 @@ class NewsModel:
         """Clear all news from the collection"""
         try:
             collection = NewsModel.get_collection()
-            if not collection:
+            if collection is None:
                 logger.error("Cannot clear news: Collection not available")
                 return False
             collection.delete_many({})
@@ -40,7 +40,7 @@ class NewsModel:
                 return False
             
             collection = NewsModel.get_collection()
-            if not collection:
+            if collection is None:
                 logger.error("Cannot insert news: Collection not available")
                 return False
             
@@ -62,7 +62,7 @@ class NewsModel:
         """Get all news items sorted by creation date (newest first)"""
         try:
             collection = NewsModel.get_collection()
-            if not collection:
+            if collection is None:
                 logger.error("Cannot get news: Collection not available")
                 return []
             return list(collection.find({}, {'_id': 0}).sort('created_at', -1))
@@ -75,7 +75,7 @@ class NewsModel:
         """Get latest news items"""
         try:
             collection = NewsModel.get_collection()
-            if not collection:
+            if collection is None:
                 logger.error("Cannot get latest news: Collection not available")
                 return []
             return list(collection.find({}, {'_id': 0}).sort('created_at', -1).limit(limit))
