@@ -132,20 +132,25 @@ class ChartinkScraper:
                     chrome_options.binary_location = path
                     break
 
+        # Allow opt-out via env
+        disable_selenium = os.getenv("SCRAPER_NO_SELENIUM", "false").lower() == "true"
+
         # Use system chromedriver if provided, else default service
         chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
         self.driver = None
-        try:
-            if chromedriver_path and os.path.exists(chromedriver_path):
-                service = Service(chromedriver_path)
-                self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            else:
-                # Fallback: hope chromedriver is on PATH
-                self.driver = webdriver.Chrome(options=chrome_options)
-        except Exception as e:
-            logger.warning(f"Selenium not available; falling back to requests-based scraping. Reason: {e}")
-            self.driver = None
-        self.wait = WebDriverWait(self.driver, 30)
+        if not disable_selenium:
+            try:
+                if chromedriver_path and os.path.exists(chromedriver_path):
+                    service = Service(chromedriver_path)
+                    self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                else:
+                    # Fallback: hope chromedriver is on PATH
+                    self.driver = webdriver.Chrome(options=chrome_options)
+            except Exception as e:
+                logger.warning(f"Selenium not available; falling back to requests-based scraping. Reason: {e}")
+                self.driver = None
+
+        self.wait = WebDriverWait(self.driver, 30) if self.driver is not None else None
 
     def get_column_indices(self, soup):
         """Get the correct column indices based on table headers"""
