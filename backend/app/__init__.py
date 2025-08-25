@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from app.extensions import mongo
@@ -12,11 +12,34 @@ def create_app():
     app.config.setdefault("JWT_SECRET_KEY", "jwtsecret")
 
     # Init extensions with CORS configuration
-    CORS(app, 
-         origins=app.config.get("CORS_ORIGINS", ["https://stocksensor.vercel.app"]),
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization"],
-         supports_credentials=True)
+    CORS(
+        app,
+        origins=app.config.get("CORS_ORIGINS", ["https://stocksensor.vercel.app"]),
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        supports_credentials=True,
+        always_send=True,
+    )
+
+    # Ensure CORS headers are present even on error responses
+    @app.after_request
+    def add_cors_headers(response):
+        try:
+            allowed_origins = app.config.get("CORS_ORIGINS", ["https://stocksensor.vercel.app"])
+            request_origin = request.headers.get("Origin")
+            if request_origin and request_origin in allowed_origins:
+                response.headers.setdefault("Access-Control-Allow-Origin", request_origin)
+                response.headers.setdefault("Vary", "Origin")
+                response.headers.setdefault("Access-Control-Allow-Credentials", "true")
+                response.headers.setdefault(
+                    "Access-Control-Allow-Headers", "Content-Type, Authorization"
+                )
+                response.headers.setdefault(
+                    "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"
+                )
+        except Exception:
+            pass
+        return response
     
     # Initialize MongoDB with error handling
     try:
