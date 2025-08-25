@@ -33,7 +33,7 @@ def health_check():
             })
         
         # Test MongoDB connection
-        if mongo.db:
+        if mongo.db is not None:
             # Try to list collections to test connection
             collections = mongo.db.list_collection_names()
             db_status = 'connected'

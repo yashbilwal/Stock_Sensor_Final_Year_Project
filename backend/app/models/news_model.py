@@ -8,7 +8,7 @@ class NewsModel:
     @staticmethod
     def get_collection():
         try:
-            if not mongo.db:
+            if mongo.db is None:
                 logger.error("MongoDB connection not established")
                 return None
             return mongo.db.news
