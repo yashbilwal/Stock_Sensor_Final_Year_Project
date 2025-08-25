@@ -1,14 +1,20 @@
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 from app.services.stock_analysis_service import StockAnalysisService
 from app.models.stock_analysis_model import StockAnalysisResponse
 import logging
 
 stock_bp = Blueprint('stock', __name__)
 
-@stock_bp.route('/analyze', methods=['POST'])
+@stock_bp.route('/analyze', methods=['POST', 'OPTIONS'])
+@cross_origin()
 def analyze_stock():
     """Analyze a stock and return comprehensive report"""
     try:
+        # Handle OPTIONS request for CORS preflight
+        if request.method == 'OPTIONS':
+            return jsonify({'status': 'ok'}), 200
+            
         data = request.get_json()
         if not data or 'symbol' not in data:
             return jsonify({
@@ -36,13 +42,18 @@ def analyze_stock():
         logging.error(f"Error in stock analysis: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Internal server error occurred'
+            'error': f'Internal server error occurred: {str(e)}'
         }), 500
 
-@stock_bp.route('/analyze/<symbol>', methods=['GET'])
+@stock_bp.route('/analyze/<symbol>', methods=['GET', 'OPTIONS'])
+@cross_origin()
 def get_stock_analysis(symbol):
     """Get stock analysis by symbol"""
     try:
+        # Handle OPTIONS request for CORS preflight
+        if request.method == 'OPTIONS':
+            return jsonify({'status': 'ok'}), 200
+            
         symbol = symbol.strip().upper()
         if not symbol:
             return jsonify({
@@ -63,7 +74,7 @@ def get_stock_analysis(symbol):
         logging.error(f"Error in stock analysis: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Internal server error occurred'
+            'error': f'Internal server error occurred: {str(e)}'
         }), 500
 
 @stock_bp.route('/search', methods=['POST'])

@@ -12,7 +12,11 @@ def create_app():
     app.config.setdefault("JWT_SECRET_KEY", "jwtsecret")
 
     # Init extensions with CORS configuration
-    CORS(app, origins=app.config.get("CORS_ORIGINS", ["https://stocksensor.vercel.app"]))
+    CORS(app, 
+         origins=app.config.get("CORS_ORIGINS", ["https://stocksensor.vercel.app"]),
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization"],
+         supports_credentials=True)
     mongo.init_app(app)
     JWTManager(app)
 

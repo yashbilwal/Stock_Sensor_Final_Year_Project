@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+from flask_cors import cross_origin
 from app.extensions import mongo
 import logging
 
@@ -14,7 +15,8 @@ def ping():
         'timestamp': '2025-08-25'
     })
 
-@ping_bp.route('/health', methods=['GET'])
+@ping_bp.route('/health', methods=['GET', 'OPTIONS'])
+@cross_origin()
 def health_check():
     """Comprehensive health check including database"""
     try:
