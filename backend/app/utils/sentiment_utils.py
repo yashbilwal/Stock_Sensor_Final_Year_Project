@@ -1,4 +1,9 @@
-from textblob import TextBlob
+try:
+    from textblob import TextBlob
+    TEXTBLOB_AVAILABLE = True
+except ImportError:
+    TEXTBLOB_AVAILABLE = False
+    print("Warning: TextBlob not available. Sentiment analysis will be disabled.")
 import re
 
 def clean_text(text):
@@ -16,6 +21,10 @@ def analyze_sentiment(text):
     Analyze sentiment of text and return 'positive', 'negative', or 'neutral'
     """
     try:
+        if not TEXTBLOB_AVAILABLE:
+            # Fallback to neutral if TextBlob is not available
+            return 'neutral'
+            
         # Clean the text
         cleaned_text = clean_text(text)
         
