@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, current_app
 from flask_cors import cross_origin
 from app.extensions import mongo
 import logging
@@ -20,6 +20,18 @@ def ping():
 def health_check():
     """Comprehensive health check including database"""
     try:
+        # Check if database is available
+        if not current_app.config.get('DB_AVAILABLE', True):
+            return jsonify({
+                'status': 'success',
+                'service': 'Stock Sensor Backend',
+                'database': {
+                    'status': 'unavailable',
+                    'info': 'Database not configured or connection failed'
+                },
+                'timestamp': '2025-08-25'
+            })
+        
         # Test MongoDB connection
         if mongo.db:
             # Try to list collections to test connection

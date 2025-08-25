@@ -17,7 +17,18 @@ def create_app():
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
          allow_headers=["Content-Type", "Authorization"],
          supports_credentials=True)
-    mongo.init_app(app)
+    
+    # Initialize MongoDB with error handling
+    try:
+        mongo.init_app(app)
+        print(f"MongoDB initialized with URI: {app.config.get('MONGO_URI', 'default')}")
+    except Exception as e:
+        print(f"Warning: MongoDB initialization failed: {str(e)}")
+        print("App will continue without database functionality")
+        # Set a flag to indicate database is not available
+        app.config['DB_AVAILABLE'] = False
+    else:
+        app.config['DB_AVAILABLE'] = True
     JWTManager(app)
 
     # Register routes
