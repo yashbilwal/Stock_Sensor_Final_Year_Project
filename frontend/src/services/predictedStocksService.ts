@@ -28,6 +28,63 @@ class PredictedStocksService {
     this.baseURL = import.meta.env.VITE_API_URL || 'https://stock-sensor-backend.onrender.com/api';
   }
 
+  async triggerScrapeStocks(): Promise<{ success: boolean; message: string } | null> {
+    try {
+      const response = await fetch(`${this.baseURL}/predict/scrape-stocks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error triggering stock scraping:', error);
+      return null;
+    }
+  }
+
+  async triggerRunVCP(): Promise<{ success: boolean; message: string } | null> {
+    try {
+      const response = await fetch(`${this.baseURL}/predict/run-vcp-analysis`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error triggering VCP analysis:', error);
+      return null;
+    }
+  }
+
+  async triggerRunIPO(): Promise<{ success: boolean; message: string } | null> {
+    try {
+      const response = await fetch(`${this.baseURL}/predict/run-ipo-analysis`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error triggering IPO analysis:', error);
+      return null;
+    }
+  }
+
   async fetchPredictedStocks(): Promise<PredictedStock[]> {
     try {
       const response = await fetch(`${this.baseURL}/predict/predicted-stocks`);

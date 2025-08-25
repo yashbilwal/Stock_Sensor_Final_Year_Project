@@ -3,6 +3,19 @@ from app.services.news_service import NewsService
 
 news_bp = Blueprint('news', __name__)
 
+@news_bp.route('/scrape-now', methods=['POST'])
+def scrape_news_now():
+    """Trigger Economic Times news scraping and store results"""
+    try:
+        result = NewsService.scrape_and_store_news()
+        status_code = 200 if result.get('success') else 500
+        return jsonify(result), status_code
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Failed to run news scraper: {str(e)}'
+        }), 500
+
 @news_bp.route('/live-news', methods=['GET'])
 def get_live_news():
     """Get live news for the frontend LiveNewsSection"""

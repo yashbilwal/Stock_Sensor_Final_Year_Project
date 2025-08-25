@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Clock, TrendingUp, TrendingDown, Minus, ExternalLink, Sparkles, Star, RefreshCw, AlertCircle } from 'lucide-react';
+import { Clock, TrendingUp, TrendingDown, Minus, ExternalLink, Sparkles, Star, RefreshCw, AlertCircle, Play } from 'lucide-react';
 import { useNews } from '../../hooks/useNews';
 import { NewsItem } from '../../services/newsService';
+import newsService from '../../services/newsService';
 
 const LiveNewsSection: React.FC = () => {
   const [selectedSentiment, setSelectedSentiment] = useState<'All' | 'Positive' | 'Negative' | 'Neutral'>('All');
@@ -179,7 +180,7 @@ const LiveNewsSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Last Updated and Refresh */}
+          {/* Last Updated, Refresh, and Manual Trigger */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-galaxy-400">
               <Clock className="h-4 w-4" />
@@ -192,6 +193,19 @@ const LiveNewsSection: React.FC = () => {
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
+            </button>
+            <button
+              onClick={async () => {
+                const res = await newsService.triggerScrapeNow();
+                if (res?.success) {
+                  refreshNews();
+                }
+              }}
+              disabled={loading}
+              className="flex items-center space-x-2 px-3 py-2 text-sm text-cosmic-cyan hover:text-cosmic-purple transition-colors disabled:opacity-50"
+            >
+              <Play className="h-4 w-4" />
+              <span>Run Scraper</span>
             </button>
           </div>
         </div>

@@ -23,6 +23,27 @@ class NewsService {
     this.baseURL = import.meta.env.VITE_API_URL || 'https://stock-sensor-backend.onrender.com/api';
   }
 
+  async triggerScrapeNow(): Promise<{ success: boolean; message: string } | null> {
+    try {
+      const response = await fetch(`${this.baseURL}/news/scrape-now`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error triggering news scrape:', error);
+      return null;
+    }
+  }
+
   async fetchLiveNews(): Promise<NewsItem[]> {
     try {
       const response = await fetch(`${this.baseURL}/news/live-news`);

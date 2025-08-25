@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Filter, ArrowRight, Target, Calendar, Sparkles, Star, RefreshCw, AlertCircle } from 'lucide-react';
+import { TrendingUp, Filter, ArrowRight, Target, Calendar, Sparkles, Star, RefreshCw, AlertCircle, Play } from 'lucide-react';
 import { usePredictedStocks } from '../../hooks/usePredictedStocks';
 import { PredictedStock } from '../../services/predictedStocksService';
+import predictedStocksService from '../../services/predictedStocksService';
 
 const PredictedStocksSection: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<'All' | 'VCP' | 'IPO Base'>('All');
@@ -211,7 +212,7 @@ const PredictedStocksSection: React.FC = () => {
             </select>
           </div>
 
-          {/* Last Updated and Refresh */}
+          {/* Last Updated, Refresh, and Manual Triggers */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-galaxy-400">
               <Calendar className="h-4 w-4" />
@@ -224,6 +225,33 @@ const PredictedStocksSection: React.FC = () => {
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
+            </button>
+            <button
+              onClick={async () => {
+                const res = await predictedStocksService.triggerScrapeStocks();
+                if (res?.success) {
+                  refreshStocks();
+                }
+              }}
+              disabled={loading}
+              className="flex items-center space-x-2 px-3 py-2 text-sm text-cosmic-cyan hover:text-cosmic-purple transition-colors disabled:opacity-50"
+            >
+              <Play className="h-4 w-4" />
+              <span>Scrape Stocks</span>
+            </button>
+            <button
+              onClick={async () => {
+                const resV = await predictedStocksService.triggerRunVCP();
+                const resI = await predictedStocksService.triggerRunIPO();
+                if (resV?.success || resI?.success) {
+                  refreshStocks();
+                }
+              }}
+              disabled={loading}
+              className="flex items-center space-x-2 px-3 py-2 text-sm text-cosmic-cyan hover:text-cosmic-purple transition-colors disabled:opacity-50"
+            >
+              <Play className="h-4 w-4" />
+              <span>Run Analyses</span>
             </button>
           </div>
         </div>
