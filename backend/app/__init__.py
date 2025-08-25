@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from app.extensions import mongo
@@ -18,11 +18,11 @@ def create_app():
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
         supports_credentials=True,
-        always_send=True,
+        resources={r"/api/*": {"origins": "https://stocksensor.vercel.app"}},
+        always_send=True,  # ✅ fixed missing comma
     )
 
-    # Ensure CORS headers are present even on error responses
-    @app.after_request
+    # ---- Ensure CORS headers are always applied ----
     def add_cors_headers(response):
         try:
             allowed_origins = app.config.get("CORS_ORIGINS", ["https://stocksensor.vercel.app"])
@@ -40,21 +40,39 @@ def create_app():
         except Exception:
             pass
         return response
-    
-    # Initialize MongoDB with error handling
+
+    @app.after_request
+    def after_request(response):
+        return add_cors_headers(response)
+
+    # ---- Error handlers with CORS ----
+    @app.errorhandler(404)
+    def not_found_error(e):
+        response = jsonify({"success": False, "error": "Resource not found"})
+        response.status_code = 404
+        return add_cors_headers(response)
+
+    @app.errorhandler(500)
+    def internal_error(e):
+        response = jsonify({"success": False, "error": "Internal server error"})
+        response.status_code = 500
+        return add_cors_headers(response)
+
+    # ---- Initialize MongoDB ----
     try:
         mongo.init_app(app)
         print(f"MongoDB initialized with URI: {app.config.get('MONGO_URI', 'default')}")
     except Exception as e:
         print(f"Warning: MongoDB initialization failed: {str(e)}")
         print("App will continue without database functionality")
-        # Set a flag to indicate database is not available
-        app.config['DB_AVAILABLE'] = False
+        app.config["DB_AVAILABLE"] = False
     else:
-        app.config['DB_AVAILABLE'] = True
+        app.config["DB_AVAILABLE"] = True
+
+    # ---- JWT ----
     JWTManager(app)
 
-    # Register routes
+    # ---- Register routes ----
     try:
         from app.routes import register_routes
         register_routes(app)
@@ -64,7 +82,7 @@ def create_app():
         from app.routes.ping_routes import ping_bp
         from app.routes.stock_routes import stock_bp
         from app.routes.predict_routes import predict_bp
-        
+
         app.register_blueprint(auth_bp, url_prefix="/api/auth")
         app.register_blueprint(news_bp, url_prefix="/api/news")
         app.register_blueprint(ping_bp, url_prefix="/api")
