@@ -10,6 +10,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
@@ -103,7 +105,7 @@ class ChartinkScraper:
 
         # Setup Chrome options
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
@@ -111,10 +113,22 @@ class ChartinkScraper:
         chrome_options.add_argument(
             "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/91.0.4472.124 Safari/537.36"
+            "Chrome/119.0.0.0 Safari/537.36"
         )
 
-        self.driver = webdriver.Chrome(options=chrome_options)
+        # Allow overriding Chrome binary via env (Render)
+        chrome_bin = os.getenv("GOOGLE_CHROME_BIN")
+        if chrome_bin:
+            chrome_options.binary_location = chrome_bin
+
+        # Use system chromedriver if provided, else default service
+        chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
+        if chromedriver_path and os.path.exists(chromedriver_path):
+            service = Service(chromedriver_path)
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+        else:
+            # Fallback: hope chromedriver is on PATH
+            self.driver = webdriver.Chrome(options=chrome_options)
         self.wait = WebDriverWait(self.driver, 30)
 
     def get_column_indices(self, soup):

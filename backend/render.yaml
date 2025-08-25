@@ -6,10 +6,16 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       chmod +x start.sh
+      # Install Chromium and chromedriver for Selenium
+      apt-get update && apt-get install -y chromium chromium-driver || true
     startCommand: ./start.sh
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.16
+      - key: GOOGLE_CHROME_BIN
+        value: /usr/bin/chromium
+      - key: CHROMEDRIVER_PATH
+        value: /usr/bin/chromedriver
       - key: MONGO_URI
         sync: false
       - key: JWT_SECRET_KEY
