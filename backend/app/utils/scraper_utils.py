@@ -132,7 +132,7 @@ class ChartinkScraper:
                     chrome_options.binary_location = path
                     break
 
-        # Allow opt-out via env
+        # Allow opt-out via env (kept but default false; news scraper unaffected)
         disable_selenium = os.getenv("SCRAPER_NO_SELENIUM", "false").lower() == "true"
 
         # Use system chromedriver if provided, else default service

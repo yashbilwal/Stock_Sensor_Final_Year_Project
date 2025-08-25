@@ -16,8 +16,6 @@ services:
         value: /usr/bin/chromium
       - key: CHROMEDRIVER_PATH
         value: /usr/bin/chromedriver
-      - key: SCRAPER_NO_SELENIUM
-        value: true
       - key: MONGO_URI
         sync: false
       - key: JWT_SECRET_KEY
