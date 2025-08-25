@@ -1,0 +1,10 @@
+{
+  "env": {
+    "VITE_API_URL": "https://stock-sensor-backend.onrender.com/api"
+  },
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://stock-sensor-backend.onrender.com/api"
+    }
+  }
+}

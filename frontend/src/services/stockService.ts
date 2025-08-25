@@ -76,8 +76,8 @@ class StockService {
   private baseURL: string;
 
   constructor() {
-    // Use environment variable or default to localhost
-    this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    // Use environment variable or default to Render backend
+    this.baseURL = import.meta.env.VITE_API_URL || 'https://stock-sensor-backend.onrender.com/api';
   }
 
   async analyzeStock(symbol: string): Promise<StockAnalysisData> {
